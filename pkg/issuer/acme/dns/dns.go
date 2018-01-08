@@ -31,6 +31,7 @@ type Solver struct {
 	client            kubernetes.Interface
 	secretLister      corev1listers.SecretLister
 	resourceNamespace string
+	nameservers       string
 }
 
 func (s *Solver) Present(ctx context.Context, crt *v1alpha1.Certificate, domain, token, key string) error {
@@ -66,7 +67,7 @@ func (s *Solver) Wait(ctx context.Context, crt *v1alpha1.Certificate, domain, to
 			out := make(chan boolErr, 1)
 			go func() {
 				defer close(out)
-				ok, err := util.PreCheckDNS(fqdn, value)
+				ok, err := util.PreCheckDNS(fqdn, value, s.nameservers)
 				out <- boolErr{ok, err}
 			}()
 			return out
@@ -162,6 +163,6 @@ func (s *Solver) solverFor(crt *v1alpha1.Certificate, domain string) (solver, er
 	return impl, nil
 }
 
-func NewSolver(issuer v1alpha1.GenericIssuer, client kubernetes.Interface, secretLister corev1listers.SecretLister, resourceNamespace string) *Solver {
-	return &Solver{issuer, client, secretLister, resourceNamespace}
+func NewSolver(issuer v1alpha1.GenericIssuer, client kubernetes.Interface, secretLister corev1listers.SecretLister, resourceNamespace string, nameservers []string) *Solver {
+	return &Solver{issuer, client, secretLister, resourceNamespace, nameservers}
 }

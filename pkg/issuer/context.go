@@ -37,4 +37,7 @@ type Context struct {
 	// ACMEHTTP01SolverImage is the image to use for solving ACME HTTP01
 	// challenges
 	ACMEHTTP01SolverImage string
+	// ACMEDNS01SolverNameservers is a list of nameservers to use for solving
+	// ACME DNS01 challenges if you don't want to use the local resolv.conf file
+	ACMEDNS01SolverNameservers string
 }

@@ -3,6 +3,7 @@ package acme
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/golang/glog"
 	"golang.org/x/crypto/acme"
@@ -58,6 +59,7 @@ func New(issuer v1alpha1.GenericIssuer,
 	recorder record.EventRecorder,
 	resourceNamespace string,
 	acmeHTTP01SolverImage string,
+	acmeDNS01SolverNameservers string,
 	secretsLister corelisters.SecretLister) (issuer.Interface, error) {
 	if issuer.GetSpec().ACME == nil {
 		return nil, fmt.Errorf("acme config may not be empty")
@@ -79,7 +81,7 @@ func New(issuer v1alpha1.GenericIssuer,
 		cmClient:                 cmClient,
 		recorder:                 recorder,
 		secretsLister:            secretsLister,
-		dnsSolver:                dns.NewSolver(issuer, client, secretsLister, resourceNamespace),
+		dnsSolver:                dns.NewSolver(issuer, client, secretsLister, resourceNamespace, strings.Split(acmeDNS01SolverNameservers, ",")),
 		httpSolver:               http.NewSolver(issuer, client, secretsLister, acmeHTTP01SolverImage),
 		issuerResourcesNamespace: resourceNamespace,
 	}, nil
@@ -135,6 +137,7 @@ func init() {
 			ctx.Recorder,
 			issuerResourcesNamespace,
 			ctx.ACMEHTTP01SolverImage,
+			ctx.ACMEDNS01SolverNameservers,
 			ctx.KubeSharedInformerFactory.Core().V1().Secrets().Lister(),
 		)
 	})

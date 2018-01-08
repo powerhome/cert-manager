@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-type preCheckDNSFunc func(fqdn, value string) (bool, error)
+type preCheckDNSFunc func(fqdn, value string, nameservers []string) (bool, error)
 
 var (
 	// PreCheckDNS checks DNS propagation before notifying ACME that
@@ -27,13 +27,15 @@ var defaultNameservers = []string{
 	"google-public-dns-b.google.com:53",
 }
 
-var RecursiveNameservers = getNameservers(defaultResolvConf, defaultNameservers)
-
 // DNSTimeout is used to override the default DNS timeout of 10 seconds.
 var DNSTimeout = 10 * time.Second
 
 // getNameservers attempts to get systems nameservers before falling back to the defaults
-func getNameservers(path string, defaults []string) []string {
+func getNameservers(path string, defaults []string, userNameservers []string) []string {
+	if len(userNameservers) > 0 {
+		return userNameservers
+	}
+
 	config, err := dns.ClientConfigFromFile(path)
 	if err != nil || len(config.Servers) == 0 {
 		return defaults
@@ -52,7 +54,9 @@ func getNameservers(path string, defaults []string) []string {
 }
 
 // checkDNSPropagation checks if the expected TXT record has been propagated to all authoritative nameservers.
-func checkDNSPropagation(fqdn, value string) (bool, error) {
+func checkDNSPropagation(fqdn, value string, nameservers []string) (bool, error) {
+	var RecursiveNameservers = getNameservers(defaultResolvConf, defaultNameservers, nameservers)
+
 	// Initial attempt to resolve at the recursive NS
 	r, err := dnsQuery(fqdn, dns.TypeTXT, RecursiveNameservers, true)
 	if err != nil {
@@ -70,7 +74,7 @@ func checkDNSPropagation(fqdn, value string) (bool, error) {
 		}
 	}
 
-	authoritativeNss, err := lookupNameservers(fqdn)
+	authoritativeNss, err := lookupNameservers(fqdn, RecursiveNameservers)
 	if err != nil {
 		return false, err
 	}
@@ -140,15 +144,15 @@ func dnsQuery(fqdn string, rtype uint16, nameservers []string, recursive bool) (
 }
 
 // lookupNameservers returns the authoritative nameservers for the given fqdn.
-func lookupNameservers(fqdn string) ([]string, error) {
+func lookupNameservers(fqdn string, nameservers []string) ([]string, error) {
 	var authoritativeNss []string
 
-	zone, err := FindZoneByFqdn(fqdn, RecursiveNameservers)
+	zone, err := FindZoneByFqdn(fqdn, getNameservers(defaultResolvConf, defaultNameservers, nameservers))
 	if err != nil {
 		return nil, fmt.Errorf("Could not determine the zone: %v", err)
 	}
 
-	r, err := dnsQuery(zone, dns.TypeNS, RecursiveNameservers, true)
+	r, err := dnsQuery(zone, dns.TypeNS, getNameservers(defaultResolvConf, defaultNameservers, nameservers), true)
 	if err != nil {
 		return nil, err
 	}
