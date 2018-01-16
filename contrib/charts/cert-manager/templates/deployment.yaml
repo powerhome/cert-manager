@@ -28,6 +28,10 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ template "cert-manager.serviceAccountName" . }}
+{{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.image.pullSecrets | indent 6 }}
+{{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -65,6 +69,12 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+{{- if .Values.customDNSServers }}
+          volumeMounts:
+            - name: resolv-acme
+              mountPath: /etc/resolv_acme.conf
+              subPath: resolv_acme.conf
+{{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}
@@ -85,4 +95,10 @@ spec:
 {{- if .Values.podDnsConfig }}
       dnsConfig:
 {{ toYaml .Values.podDnsConfig | indent 8 }}
+{{- end }}
+{{- if .Values.customDNSServers }}
+      volumes:
+        - name: resolv-acme
+          configMap:
+            name: {{ template "fullname" . }}
 {{- end }}

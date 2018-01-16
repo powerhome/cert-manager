@@ -48,7 +48,6 @@ $ helm delete my-release
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
 ## Configuration
-
 The following table lists the configurable parameters of the cert-manager chart and their default values.
 
 | Parameter | Description | Default |
@@ -56,6 +55,7 @@ The following table lists the configurable parameters of the cert-manager chart 
 | `image.repository` | Image repository | `quay.io/jetstack/cert-manager-controller` |
 | `image.tag` | Image tag | `v0.3.0` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
+| `image.pullSecret`     | Image pull Secrets                      | `[]`                                           |
 | `replicaCount`  | Number of cert-manager replicas  | `1` |
 | `createCustomResource` | Create CRD/TPR with this release | `true` |
 | `clusterResourceNamespace` | Override the namespace used to store DNS provider credentials etc. for ClusterIssuer resources | Same namespace as cert-manager pod
@@ -66,6 +66,7 @@ The following table lists the configurable parameters of the cert-manager chart 
 | `serviceAccount.create` | If `true`, create a new service account | `true` |
 | `serviceAccount.name` | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template |  |
 | `resources` | CPU/memory resource requests/limits | `requests: {cpu: 10m, memory: 32Mi}` |
+| `customDNSServers`     | Custom DNS Servers to use               | `None`                                         |
 | `nodeSelector` | Node labels for pod assignment | `{}` |
 | `affinity` | Node affinity for pod assignment | `{}` |
 | `tolerations` | Node tolerations for pod assignment | `[]` |
